@@ -2,17 +2,46 @@ package com.glenfordham.webserver.config;
 
 public enum Parameters {
 
-    PORT("p",true,"sets the port to listen on", "81"),
-    TEMP_DIR_PREFIX("t", true, "sets Tomcat's temporary directory prefix", "tomcat-base-dir");
+    HELP(
+            "h",
+            false,
+            false,
+            "help",
+            false,
+            "displays the help text you're seeing now",
+            null
+    ),
+    PORT(
+            "p",
+            true,
+            true,
+            "port",
+            true,
+            "sets the port to listen on  eg. 80",
+            null),
+    TEMP_DIR_PREFIX(
+            "t",
+            false,
+            true,
+            "tempDirPrefix",
+            true,
+            "sets prefix for Tomcat's temporary directory name  eg. prefix",
+            "tomcat-base-dir");
 
-    private final String param;
-    private final boolean isArgumentRequired;
+    private final String name;
+    private final boolean isRequired;
+    private final boolean isConfig;
+    private final String longName;
+    private final boolean isArgValueRequired;
     private final String helpMessage;
     private final String defaultValue;
 
-    Parameters(String param, boolean isArgumentRequired, String helpMessage, String defaultValue) {
-        this.param = param;
-        this.isArgumentRequired = isArgumentRequired;
+    Parameters(String name, boolean isRequired, boolean isConfig, String longName, boolean isArgValueRequired, String helpMessage, String defaultValue) {
+        this.name = name;
+        this.isRequired = isRequired;
+        this.isConfig = isConfig;
+        this.longName = longName;
+        this.isArgValueRequired = isArgValueRequired;
         this.helpMessage = helpMessage;
         this.defaultValue = defaultValue;
     }
@@ -22,8 +51,36 @@ public enum Parameters {
      *
      * @return the parameter name
      */
-    public String getParam() {
-        return param;
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Returns whether is the parameter is required or not
+     *
+     * @return true if the parameter is required
+     */
+    public boolean getIsRequired() {
+        return isRequired;
+    }
+
+    /**
+     * Returns whether is the parameter is application config or not
+     *
+     * @return true if the parameter is application config
+     */
+    public boolean getIsConfig() {
+        return isConfig;
+    }
+
+
+    /**
+     * Returns the long name variant of the parameter
+     *
+     * @return the parameter long name variant
+     */
+    public String getLongName() {
+        return longName;
     }
 
     /**
@@ -31,8 +88,8 @@ public enum Parameters {
      *
      * @return true if an argument is required
      */
-    public boolean isArgumentRequired() {
-        return isArgumentRequired;
+    public boolean isArgValueRequired() {
+        return isArgValueRequired;
     }
 
     /**

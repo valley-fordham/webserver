@@ -8,7 +8,7 @@ public class Application {
         try {
             // Set up environment variable for log4j
             System.setProperty("log4j.configurationFile", Application.class.getResource("log4j2-config.xml").getPath());
-            Log.infoFormat("Application started under Java ", System.getProperty("java.version"));
+            Log.infoFormat("Application started under Java %s", System.getProperty("java.version"));
 
             // Load command-line arguments into configuration map and start
             CliParser.getInstance().loadConfig(args);
