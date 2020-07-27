@@ -1,9 +1,10 @@
 plugins {
     id 'java-library'
+    id "com.github.johnrengelman.shadow" version "6.0.0"
 }
 
 group 'com.glenfordham'
-version '1.0-SNAPSHOT'
+version '1.0.'+gitCommitNumber()
 
 java {
     sourceCompatibility = JavaVersion.VERSION_14
@@ -11,15 +12,19 @@ java {
 }
 
 sourceSets.main.java.srcDirs = ['src/main/java/']
+// Log4j2 XML resources
 sourceSets.main.resources.srcDirs = [ "src/main/resources" ]
 sourceSets.main.resources.includes = [ "**/*.xml" ]
+
+final String buildJrePath = "$buildDir\\package\\"
+final String libsPath = "$buildDir\\libs\\"
 
 jar {
     doFirst {
         manifest {
             attributes(
                     'Main-Class': 'com.glenfordham.webserver.Application',
-                    'Implementation-Title': 'Web Server',
+                    'Implementation-Title': 'Web Server Template',
                     'Implementation-Version': getArchiveVersion()
             )
         }
@@ -31,14 +36,66 @@ repositories {
 }
 
 dependencies {
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
-
-    implementation('org.apache.logging.log4j:log4j-core:2.13.3')
     final String tomcatVersion = '9.0.36'
-    implementation('org.apache.tomcat.embed:tomcat-embed-core:'+tomcatVersion)
-    implementation('org.apache.tomcat.embed:tomcat-embed-jasper:'+tomcatVersion)
-    implementation('org.apache.tomcat:tomcat-jasper:'+tomcatVersion)
-    implementation('org.apache.tomcat:tomcat-jasper-el:'+tomcatVersion)
-    implementation('org.apache.tomcat:tomcat-jsp-api:'+tomcatVersion)
-    implementation('commons-cli:commons-cli:1.4')
+
+    testImplementation 'junit:junit:4.12'
+
+    implementation 'commons-cli:commons-cli:1.4'
+    implementation 'commons-io:commons-io:2.7'
+    implementation 'org.apache.logging.log4j:log4j-core:2.13.3'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:'+tomcatVersion
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:'+tomcatVersion
+    implementation 'org.apache.tomcat:tomcat-jasper:'+tomcatVersion
+    implementation 'org.apache.tomcat:tomcat-jasper-el:'+tomcatVersion
+    implementation 'org.apache.tomcat:tomcat-jsp-api:'+tomcatVersion
+}
+
+// Output all dependency jars to a folder
+task copyToLib(type: Copy) {
+    from configurations.compileClasspath
+    into libsPath
+}
+
+// Analyse project and retrieve modules used
+task getModuleList(dependsOn:["copyToLib","jar"],type:Exec) {
+    workingDir '.\\'
+    commandLine 'cmd', '/c', 'jdeps --print-module-deps --multi-release 11 ' + libsPath + '*'
+    standardOutput = new ByteArrayOutputStream()
+    // Allows other tasks to get output of this task
+    ext.out = {
+        // Remove unwanted line breaks
+        return standardOutput.toString().replace("\r\n", "")
+    }
+}
+
+// Build runtime files with jlink
+task buildJre(dependsOn:["getModuleList","deleteJre"],type:Exec) {
+    doFirst {
+        workingDir '.\\'
+        commandLine 'cmd', '/c', 'jlink --add-modules ' + (String) tasks.getModuleList.out() + ' --output ' + buildJrePath
+    }
+}
+
+// Delete existing JRE folder
+task deleteJre(type:Delete) {
+    doFirst {
+        try {
+            project.delete buildJrePath
+        } catch (IOException ignore) {}
+    }
+}
+
+// Copy FAT jar to JRE for packaging
+task copyFatJar(dependsOn:"shadowJar",type:Copy) {
+    from file(libsPath + project.name + "-1.0.21-all.jar")
+    into file(buildJrePath)
+}
+
+static def gitCommitNumber() {
+    String commitNumber = "git rev-list --count HEAD --no-merges".execute().text.toString()
+    if (commitNumber.trim().isEmpty()) {
+        return 0
+    } else {
+        return commitNumber.trim().toInteger()
+    }
 }

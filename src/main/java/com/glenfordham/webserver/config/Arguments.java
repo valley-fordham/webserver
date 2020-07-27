@@ -1,6 +1,9 @@
 package com.glenfordham.webserver.config;
 
-public enum Parameters {
+/**
+ * Contains all supported application arguments
+ */
+public enum Arguments {
 
     HELP(
             "h",
@@ -13,12 +16,12 @@ public enum Parameters {
     ),
     PORT(
             "p",
-            true,
+            false,
             true,
             "port",
             true,
             "sets the port to listen on  eg. 80",
-            null),
+            "80"),
     TEMP_DIR_PREFIX(
             "t",
             false,
@@ -36,7 +39,7 @@ public enum Parameters {
     private final String helpMessage;
     private final String defaultValue;
 
-    Parameters(String name, boolean isRequired, boolean isConfig, String longName, boolean isArgValueRequired, String helpMessage, String defaultValue) {
+    Arguments(String name, boolean isRequired, boolean isConfig, String longName, boolean isArgValueRequired, String helpMessage, String defaultValue) {
         this.name = name;
         this.isRequired = isRequired;
         this.isConfig = isConfig;
@@ -56,18 +59,18 @@ public enum Parameters {
     }
 
     /**
-     * Returns whether is the parameter is required or not
+     * Returns whether is the argument is required or not
      *
-     * @return true if the parameter is required
+     * @return true if the argument is required
      */
     public boolean getIsRequired() {
         return isRequired;
     }
 
     /**
-     * Returns whether is the parameter is application config or not
+     * Returns whether is the argument is application config or not
      *
-     * @return true if the parameter is application config
+     * @return true if the argument is application config
      */
     public boolean getIsConfig() {
         return isConfig;
@@ -75,16 +78,16 @@ public enum Parameters {
 
 
     /**
-     * Returns the long name variant of the parameter
+     * Returns the long name variant of the argument
      *
-     * @return the parameter long name variant
+     * @return the argument long name variant
      */
     public String getLongName() {
         return longName;
     }
 
     /**
-     * Returns whether an argument (value) is required for the parameter
+     * Returns whether an argument (value) is required for the argument
      *
      * @return true if an argument is required
      */
@@ -93,7 +96,7 @@ public enum Parameters {
     }
 
     /**
-     * Returns the help message for the given parameter, used by commons-cli
+     * Returns the help message for the given argument, used by commons-cli
      *
      * @return help message
      */
@@ -102,7 +105,7 @@ public enum Parameters {
     }
 
     /**
-     * Returns the default value for the parameter
+     * Returns the default value for the argument
      *
      * @return default value
      */

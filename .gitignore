@@ -115,3 +115,6 @@ tomcat.*
 
 # Sonarlint
 .idea/sonarlint/
+
+# Generated files
+docs/

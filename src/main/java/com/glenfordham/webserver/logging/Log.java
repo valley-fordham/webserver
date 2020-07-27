@@ -1,4 +1,6 @@
-package com.glenfordham.webserver;
+package com.glenfordham.webserver.logging;
+
+import org.apache.logging.log4j.LogManager;
 
 import java.util.Formatter;
 
@@ -12,9 +14,22 @@ public class Log {
     private static org.apache.logging.log4j.Logger getLog() {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         if (stackTrace[2].getClassName().equals(Log.class.getCanonicalName())) {
-            return org.apache.logging.log4j.LogManager.getLogger(stackTrace[3].getClassName());
+            return LogManager.getLogger(stackTrace[3].getClassName());
         }
-        return org.apache.logging.log4j.LogManager.getLogger(stackTrace[2].getClassName());
+        return LogManager.getLogger(stackTrace[2].getClassName());
+    }
+
+    /**
+     * Gets the log level for the calling class
+     *
+     * @return the log level for the calling class
+     */
+    public static String getLogLevel() {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        if (stackTrace[2].getClassName().equals(Log.class.getCanonicalName())) {
+            return LogManager.getLogger(stackTrace[3].getClassName()).getLevel().name();
+        }
+        return LogManager.getLogger(stackTrace[2].getClassName()).getLevel().name();
     }
 
 

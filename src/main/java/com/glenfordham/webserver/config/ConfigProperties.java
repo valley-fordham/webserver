@@ -1,6 +1,6 @@
 package com.glenfordham.webserver.config;
 
-import com.glenfordham.webserver.Log;
+import com.glenfordham.webserver.logging.Log;
 
 import java.util.EnumMap;
 
@@ -9,39 +9,46 @@ import java.util.EnumMap;
  */
 public class ConfigProperties {
 
-    private static final EnumMap<Parameters, Object> configMap = new EnumMap<>(Parameters.class);
+    private final EnumMap<Arguments, Object> configMap = new EnumMap<>(Arguments.class);
 
-    private static ConfigProperties instance = null;
+    /**
+     * Creates a default ConfigProperties with default values pulled from Arguments enum. Internal class use only
+     */
+    public ConfigProperties() {
+        for (Arguments param : Arguments.values()) {
+            addProperty(param, param.getDefaultValue());
+        }
+    }
 
     /**
      * Adds the property and its value to the class
      *
-     * @param param The parameter key to add
-     * @param value The parameter's value
+     * @param key The property key to add
+     * @param value The property's value
      */
-    void addProperty(Parameters param, Object value) {
-        configMap.put(param, value);
+    void addProperty(Arguments key, Object value) {
+        configMap.put(key, value);
     }
 
     /**
-     * Gets the value currently assigned to the passed in property parameter
+     * Gets the value currently assigned to the passed in property
      *
-     * @param param The parameter with the value to retrieve
-     * @return The parameter's value
+     * @param key The property key to retrieve the value of
+     * @return The property's value
      */
-    public String getPropertyValue(Parameters param) {
-        return (String) configMap.get(param);
+    public String getPropertyValue(Arguments key) {
+        return (String) configMap.get(key);
     }
 
     /**
-     * Gets the value currently assigned to the passed in property parameter as an Integer
+     * Gets the value currently assigned to the passed in property as an Integer
      *
-     * @param param The parameter with the value to retrieve
-     * @return The parameter's value as an Integer
+     * @param key The property key to retrieve the Integer value of
+     * @return The property's value as an Integer
      */
-    public Integer getPropertyValueAsInt(Parameters param) {
+    public Integer getPropertyValueAsInt(Arguments key) {
         try {
-            return Integer.parseInt((String)configMap.get(param));
+            return Integer.parseInt((String)configMap.get(key));
         } catch (Exception e) {
             Log.error("Unable to get property as Integer", e);
             return null;
@@ -51,30 +58,10 @@ public class ConfigProperties {
     /**
      * Checks if the property is set
      *
-     * @param param The parameter to check if set
-     * @return true, if the parameter is set
+     * @param key The property to check if set
+     * @return true, if the property is set
      */
-    public boolean isPropertySet(Parameters param) {
-        return configMap.containsKey(param);
-    }
-
-    /**
-     * Singleton pattern
-     * Creates an instance of ConfigProperties if one does not exist
-     *
-     * @return the singleton instance of ConfigProperties
-     */
-    public static synchronized ConfigProperties getInstance() {
-        if (instance == null) {
-            instance = new ConfigProperties();
-        }
-        return instance;
-    }
-
-    // Constructor
-    private ConfigProperties() {
-        for (Parameters param : Parameters.values()) {
-            addProperty(param, param.getDefaultValue());
-        }
+    public boolean isPropertySet(Arguments key) {
+        return configMap.containsKey(key);
     }
 }

@@ -1,89 +1,68 @@
 package com.glenfordham.webserver.config;
 
-import com.glenfordham.webserver.Application;
-import com.glenfordham.webserver.Log;
+import com.glenfordham.webserver.logging.Log;
 import org.apache.commons.cli.*;
 
 import java.util.Arrays;
 
 public class CliParser {
 
-    private static CliParser instance = null;
-    private boolean loaded = false;
     private final String exeName = (getClass().getPackage().getImplementationTitle() != null ? getClass().getPackage().getImplementationTitle() : "Web Server");
 
     /**
-     * Parses command line options and loads into the static ConfigProperties instance
+     * Parses CLI arguments and loads into the static ConfigProperties instance
      *
      * @param args application arguments
+     * @return true if all required config has been loaded
      */
-    public synchronized void loadConfig(String[] args) {
-        if (!loaded) {
-            // Add all arguments without setting the 'required' flag yet, so that the --help parameter works
-            Options options = new Options();
-            Arrays.stream(Parameters.values()).forEach(parameters -> options.addOption(parameters.getName(), parameters.getLongName(), parameters.isArgValueRequired(), parameters.getHelpMessage()));
+    public ConfigProperties loadConfig(String[] args) {
+        // Add all arguments without setting the 'required' flag yet, so that the --help argument works
+        Options options = new Options();
 
-            // Check if the help argument has been provided and, if so, display help
-            CommandLine cmd = parseParameters(options, args, false);
-            if (cmd.hasOption(Parameters.HELP.getName()) || cmd.hasOption(Parameters.HELP.getLongName())) {
-                new HelpFormatter().printHelp(exeName, options);
-                Application.exit("");
-            }
+        // Add all available arguments to Options list and then set options as 'required' where needed
+        Arrays.stream(Arguments.values()).forEach(arguments -> options.addOption(arguments.getName(), arguments.getLongName(), arguments.isArgValueRequired(), arguments.getHelpMessage()));
+        Arrays.stream(Arguments.values()).filter(Arguments::getIsRequired).forEach(param -> options.addRequiredOption(param.getName(), param.getLongName(), param.isArgValueRequired(), param.getHelpMessage()));
 
-            // Reprocess Parameters list and set options as 'required' where needed
-            Arrays.stream(Parameters.values()).filter(Parameters::getIsRequired).forEach(param -> options.addRequiredOption(param.getName(), param.getLongName(), param.isArgValueRequired(), param.getHelpMessage()));
+        // Parse command line, this time checking that required arguments are present
+        CommandLine cmd = parseArguments(options, args);
 
-            // Re-parse command line, this time checking that required arguments are present
-            cmd = parseParameters(options, args, true);
+        // Check if the help argument has been provided or if a required argument is not provided - if so, display help and exit
+        if (cmd == null || (cmd.hasOption(Arguments.HELP.getName()) || cmd.hasOption(Arguments.HELP.getLongName()))) {
+            new HelpFormatter().printHelp(exeName, options);
+        }
 
-            // Load command line arguments into ConfigProperties, set values where provided
-            ConfigProperties configProperties = ConfigProperties.getInstance();
-            if (cmd != null) {
-                for (Parameters param : Parameters.values()) {
-                    if (param.getIsConfig() && cmd.hasOption(param.getName())) {
-                        configProperties.addProperty(param, cmd.getOptionValue(param.getName()));
-                    }
+        // Load command line arguments into ConfigProperties, set values where provided
+        ConfigProperties configProperties = new ConfigProperties();
+        if (cmd != null) {
+            for (Arguments param : Arguments.values()) {
+                if (param.getIsConfig() && cmd.hasOption(param.getName())) {
+                    configProperties.addProperty(param, cmd.getOptionValue(param.getName()));
                 }
-                loaded = true;
-            } else {
-                // This should never happen :)
-                Application.exit("Command-line arguments unable to initialise.");
             }
         } else {
-            Log.error("Unable to load CLI arguments, already loaded.");
+            // If CLI help has been displayed, do not load config so application will exit
+            return null;
         }
+
+        return configProperties;
     }
 
     /**
-     * Wrapper function for command line parameter parsing
+     * Wrapper function for CLI argument parsing
      *
-     * @param options         a collection of options available to the application
-     * @param args            the arguments provided to the application
-     * @param stopAtNonOption whether to stop if an unexpected argument is present
+     * @param options a collection of options available to the application
+     * @param args    the arguments provided to the application
      * @return CommandLine object representing the arguments passed by the user
      */
-    CommandLine parseParameters(Options options, String[] args, boolean stopAtNonOption) {
+    CommandLine parseArguments(Options options, String[] args) {
+        CommandLine cmd = null;
         try {
-            return new DefaultParser().parse(options, args, stopAtNonOption);
+            cmd = new DefaultParser().parse(options, args, false);
+        } catch (MissingOptionException | UnrecognizedOptionException parseException) {
+            Log.info(parseException.getMessage());
         } catch (Exception e) {
-            Application.exit(e.getMessage());
+            Log.error("Unable to parse arguments", e);
         }
-        return null;
-    }
-
-    /**
-     * Singleton pattern
-     * Creates an instance of ConfigProperties if one does not exist
-     *
-     * @return the singleton instance of ConfigProperties
-     */
-    public static synchronized CliParser getInstance() {
-        if (instance == null) {
-            instance = new CliParser();
-        }
-        return instance;
-    }
-
-    private CliParser() {
+        return cmd;
     }
 }
