@@ -45,8 +45,10 @@ public class RequestArbiter extends HttpServlet {
             // Pass context containing configuration, create ParameterMap from request ugly String[] map, and attempt to process the request
             ParameterMap parameterMap = new ParameterMap(req.getParameterMap());
 
-            // Return generic response
-            StreamUtils.writeString(GENERIC_OUTPUT, clientStream);
+            // If stream still ready after handler processing, assume nothing was written, and return generic response
+            if (clientStream.isReady()) {
+                StreamUtils.writeString(GENERIC_OUTPUT, clientStream);
+            }
         } catch (Exception e) {
             Log.error("Unexpected error occurred in servlet", e);
         }
